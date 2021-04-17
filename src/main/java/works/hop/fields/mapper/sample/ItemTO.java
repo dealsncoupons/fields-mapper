@@ -1,17 +1,14 @@
-package works.hop.fields.mapper;
+package works.hop.fields.mapper.sample;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
-
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class ItemTO3 {
+public class ItemTO {
 
     String task;
     Boolean done;
-    List<String> notes;
 }

@@ -1,8 +1,8 @@
-package works.hop.fields.mapper;
+package works.hop.fields.mapper.sample;
 
 import java.util.List;
 
-public class ItemCO extends Item{
+public class ItemCO extends Item {
 
     final Mapper mapper;
 
@@ -10,8 +10,8 @@ public class ItemCO extends Item{
         this.mapper = mapper;
     }
 
-    public ItemCO(String name, Boolean completed, String notes, List<Item> subList, Mapper mapper) {
-        super(name, completed, notes, subList);
+    public ItemCO(String name, Boolean completed, String notes, List<String> items, List<Item> objects, Mapper mapper) {
+        super(name, completed, notes, items, objects);
         this.mapper = mapper;
     }
 
@@ -34,8 +34,8 @@ public class ItemCO extends Item{
     }
 
     @Override
-    public List<Item> getSubList() {
-        this.mapper.copy("subList", super.getSubList());
-        return super.getSubList();
+    public List<Item> getNested() {
+        this.mapper.copy("subList", super.getNested());
+        return super.getNested();
     }
 }

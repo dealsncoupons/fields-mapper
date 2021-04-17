@@ -1,4 +1,4 @@
-package works.hop.fields.mapper;
+package works.hop.fields.mapper.sample;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -14,5 +14,6 @@ public class Item {
     String name;
     Boolean completed;
     String notes;
-    List<Item> subList;
+    List<String> items;
+    List<Item> nested;
 }

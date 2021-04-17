@@ -1,4 +1,4 @@
-package works.hop.fields.mapper;
+package works.hop.fields.mapper.sample;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -51,16 +51,13 @@ public class Mapper {
                 if (resolvers.containsKey(valueKey)) {
                     value = resolvers.get(valueKey).apply(values.get(valueKey));
                     Method method;
-                    if(List.class.isAssignableFrom(value.getClass())){
+                    if (List.class.isAssignableFrom(value.getClass())) {
                         method = type.getMethod(setter, List.class);
-                    }
-                    else if(Set.class.isAssignableFrom(value.getClass())){
+                    } else if (Set.class.isAssignableFrom(value.getClass())) {
                         method = type.getMethod(setter, Set.class);
-                    }
-                    else if(Map.class.isAssignableFrom(value.getClass())){
+                    } else if (Map.class.isAssignableFrom(value.getClass())) {
                         method = type.getMethod(setter, Map.class);
-                    }
-                    else{
+                    } else {
                         method = type.getMethod(setter, value.getClass());
                     }
                     method.invoke(target, value);

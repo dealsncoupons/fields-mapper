@@ -1,19 +1,32 @@
 plugins {
+    id 'org.springframework.boot' version '2.4.5'
+    id 'io.spring.dependency-management' version '1.0.11.RELEASE'
     id 'java'
 }
 
-group 'works.hop'
-version '1.0-SNAPSHOT'
+group = 'works.hop'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '11'
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
 
 repositories {
     mavenCentral()
 }
 
 dependencies {
-    compileOnly 'org.projectlombok:lombok:1.18.20'
-    testImplementation 'org.assertj:assertj-core:3.19.0'
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.0'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jdbc'
+    implementation group: 'org.flywaydb', name: 'flyway-core', version: '7.8.1'
+    implementation group: 'com.google.guava', name: 'guava', version: '30.1-jre'
+    compileOnly 'org.projectlombok:lombok'
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+    runtimeOnly 'org.postgresql:postgresql'
+    annotationProcessor 'org.projectlombok:lombok'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }
 
 test {
