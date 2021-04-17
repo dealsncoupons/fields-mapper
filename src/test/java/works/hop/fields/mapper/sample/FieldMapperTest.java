@@ -89,9 +89,9 @@ class FieldMapperTest {
         itemMapper.map("notes", "notes", (Function<String, List<String>>) s -> Arrays.asList(s.split(",")));
         itemMapper.map("nested", "children");
 
-        Item child1 = new Item("child 1", true, "", emptyList(), emptyList());
-        Item child2 = new Item("child 2", false, "", emptyList(), emptyList());
-        Item child3 = new Item("child 3", true, "", emptyList(), emptyList());
+        Item child1 = new Item("child 1", true, "una", emptyList(), emptyList());
+        Item child2 = new Item("child 2", false, "ina", emptyList(), emptyList());
+        Item child3 = new Item("child 3", true, "ana", emptyList(), emptyList());
 
         Item item = new Item("do sit-ups", false, "one,two,three", emptyList(), Arrays.asList(child1, child2, child3));
         assertThat(item.getName()).isEqualTo("do sit-ups");

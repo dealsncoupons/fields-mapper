@@ -6,7 +6,9 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -319,11 +321,14 @@ public class MappingInfo {
         if (sourceValue.getClass().isPrimitive() || Primitives.isWrapperType(sourceValue.getClass()) || String.class.isAssignableFrom(sourceValue.getClass())) {
             return sourceValue;
         } else if (List.class.isAssignableFrom(sourceValue.getClass())) {
-            return ((List) sourceValue).stream().map(value -> resolveValueType(mapper, expectedType, value)).collect(Collectors.toList());
+            List<?> list = (List<?>) sourceValue;
+            return list.stream().map(value -> resolveValueType(mapper, expectedType, value)).collect(Collectors.toList());
         } else if (Set.class.isAssignableFrom(sourceValue.getClass())) {
-            return ((Set) sourceValue).stream().map(value -> resolveValueType(mapper, expectedType, value)).collect(Collectors.toSet());
+            Set<?> set = (Set<?>) sourceValue;
+            return set.stream().map(value -> resolveValueType(mapper, expectedType, value)).collect(Collectors.toSet());
         } else if (Map.class.isAssignableFrom(sourceValue.getClass())) {
-            return ((Map<Object, Object>) sourceValue).entrySet().stream().collect(
+            Map<?, ?> map = (Map<?, ?>) sourceValue;
+            return map.entrySet().stream().collect(
                     Collectors.toMap(
                             e -> resolveValueType(mapper, e.getKey().getClass(), e.getKey()),
                             e -> resolveValueType(mapper, e.getValue().getClass(), e.getValue())
