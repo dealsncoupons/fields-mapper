@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class ItemTO {
+public class ItemTO1 {
 
     String task;
     Boolean done;

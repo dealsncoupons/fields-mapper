@@ -1,0 +1,70 @@
+scalar Date
+
+scalar DateTime
+
+scalar UUID
+
+scalar BigDecimal
+
+type PlayerTO {
+    id: UUID
+    firstName: String
+    lastName: String
+    birthDate: Date
+    homeCity: String
+    homeCountry: String
+    teams: [TeamTO]
+}
+
+input RegisterPlayer{
+    firstName: String
+    lastName: String
+    birthDate: Date
+    homeCity: String
+    homeCountry: String
+}
+
+type TeamTO {
+    id: UUID
+    name: String
+}
+
+type PrizeTO {
+    id: UUID
+    rank: Int
+    title: String
+    value: BigDecimal
+    currency: String
+    sport: SportTO
+    winner: PlayerTO
+    sponsor: SponsorTO
+    dateAwarded: Date
+    dateCreated: Date
+}
+
+type SportTO {
+    id: UUID
+    name: String
+    venue: String
+    startTime: Date
+    teams: [TeamTO]
+}
+
+type SponsorTO {
+    id: UUID
+    name: String
+    missionStatement: String
+    prizes: [PrizeTO]
+}
+
+type Query {
+    playerById(player: UUID): PlayerTO
+    sportByName(player: UUID): SportTO
+    playerSports(player: UUID): [SportTO]
+    teamPlayers(team: UUID): [PlayerTO]
+}
+
+type Mutation {
+    registerPlayer(player: RegisterPlayer): PlayerTO
+    addTeamPlayer(team: UUID, player: UUID): TeamTO
+}
