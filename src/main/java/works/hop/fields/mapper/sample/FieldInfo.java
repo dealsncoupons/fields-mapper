@@ -196,8 +196,7 @@ public class FieldInfo {
             return sourceValue;
         } else if (List.class.isAssignableFrom(sourceValue.getClass())) {
             List<?> list = (List<?>) sourceValue;
-            List<Object> result =  list.stream().map(value -> resolveValueType(mapper, expectedType, value)).collect(Collectors.toList());
-            return result;
+            return list.stream().map(value -> resolveValueType(mapper, expectedType, value)).collect(Collectors.toList());
         } else if (Set.class.isAssignableFrom(sourceValue.getClass())) {
             Set<?> set = (Set<?>) sourceValue;
             return set.stream().map(value -> resolveValueType(mapper, expectedType, value)).collect(Collectors.toSet());

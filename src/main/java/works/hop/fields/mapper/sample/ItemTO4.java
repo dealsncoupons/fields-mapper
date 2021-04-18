@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
+import java.util.Map;
 
 @Data
 @AllArgsConstructor
@@ -15,4 +16,5 @@ public class ItemTO4 {
     Boolean done;
     List<String> notes;
     List<ItemTO4> children;
+    Map<String, ItemTO4> groups;
 }

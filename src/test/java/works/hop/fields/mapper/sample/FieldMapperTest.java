@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.function.Function;
 
 import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 class FieldMapperTest {
@@ -17,7 +18,7 @@ class FieldMapperTest {
         itemMapper.map("name", "task");
         itemMapper.map("completed", "done");
 
-        Item item = new Item("read book", false, "one,two,three", emptyList(), emptyList());
+        Item item = new Item("read book", false, "one,two,three", emptyList(), emptyList(), emptyMap());
         assertThat(item.getName()).isEqualTo("read book");
         assertThat(item.getCompleted()).isEqualTo(false);
 
@@ -32,7 +33,7 @@ class FieldMapperTest {
         itemMapper.map("name", "item.name");
         itemMapper.map("completed", "item.completed");
 
-        Item item = new Item("read book", false, "one,two,three", emptyList(), emptyList());
+        Item item = new Item("read book", false, "one,two,three", emptyList(), emptyList(), emptyMap());
         assertThat(item.getName()).isEqualTo("read book");
         assertThat(item.getCompleted()).isEqualTo(false);
 
@@ -48,7 +49,7 @@ class FieldMapperTest {
         itemMapper.map("completed", "done");
         itemMapper.map("notes", "notes", (Function<String, List<String>>) s -> Arrays.asList(s.split(",")));
 
-        Item item = new Item("read book", false, "one,two,three", emptyList(), emptyList());
+        Item item = new Item("read book", false, "one,two,three", emptyList(), emptyList(), emptyMap());
         assertThat(item.getName()).isEqualTo("read book");
         assertThat(item.getCompleted()).isEqualTo(false);
         assertThat(item.getNotes()).contains("one", "two", "three");
@@ -68,7 +69,7 @@ class FieldMapperTest {
         itemMapper.map("completed", "done");
         itemMapper.map("items", "notes");
 
-        Item item = new Item("read book", false, "one,two,three", Arrays.asList("four", "five", "six"), emptyList());
+        Item item = new Item("read book", false, "one,two,three", Arrays.asList("four", "five", "six"), emptyList(), emptyMap());
         assertThat(item.getName()).isEqualTo("read book");
         assertThat(item.getCompleted()).isEqualTo(false);
         assertThat(item.getNotes()).contains("one", "two", "three");
@@ -88,11 +89,11 @@ class FieldMapperTest {
         itemMapper.map("notes", "notes", (Function<String, List<String>>) s -> Arrays.asList(s.split(",")));
         itemMapper.map("nested", "children");
 
-        Item child1 = new Item("child 1", true, "una", emptyList(), emptyList());
-        Item child2 = new Item("child 2", false, "ina", emptyList(), emptyList());
-        Item child3 = new Item("child 3", true, "ana", emptyList(), emptyList());
+        Item child1 = new Item("child 1", true, "una", emptyList(), emptyList(), emptyMap());
+        Item child2 = new Item("child 2", false, "ina", emptyList(), emptyList(), emptyMap());
+        Item child3 = new Item("child 3", true, "ana", emptyList(), emptyList(), emptyMap());
 
-        Item item = new Item("do sit-ups", false, "one,two,three", emptyList(), Arrays.asList(child1, child2, child3));
+        Item item = new Item("do sit-ups", false, "one,two,three", emptyList(), Arrays.asList(child1, child2, child3), emptyMap());
         assertThat(item.getName()).isEqualTo("do sit-ups");
         assertThat(item.getCompleted()).isEqualTo(false);
         assertThat(item.getNotes()).contains("one", "two", "three");
