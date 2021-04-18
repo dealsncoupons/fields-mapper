@@ -7,18 +7,18 @@ import java.util.function.Function;
 
 public class FieldMapper {
 
-    private final Map<String, MappingInfo> mapping = new HashMap<>();
+    private final Map<String, FieldInfo> mapping = new HashMap<>();
 
     public void map(String source, String target) {
-        this.mapping.put(source, new MappingInfo(source, target));
+        this.mapping.put(source, new FieldInfo(source, target));
     }
 
     public <T, R> void map(String source, String target, Function<T, R> resolver) {
-        this.mapping.put(source, new MappingInfo(source, target, resolver));
+        this.mapping.put(source, new FieldInfo(source, target, resolver));
     }
 
     public <T> T map(Object source, Class<T> type) {
-        T target = newTargetInstance(type);
+        T target = newInstance(type);
         mapping.forEach((key, value) -> {
             value.sourceObj = source;
             value.targetCls = type;
@@ -34,7 +34,7 @@ public class FieldMapper {
         return target;
     }
 
-    public <T> T newTargetInstance(Class<T> target) {
+    public <T> T newInstance(Class<T> target) {
         try {
             return target.getConstructor().newInstance();
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
