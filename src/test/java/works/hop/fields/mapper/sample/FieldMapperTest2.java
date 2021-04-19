@@ -3,13 +3,10 @@ package works.hop.fields.mapper.sample;
 import com.google.common.primitives.Primitives;
 import lombok.Data;
 
-import javax.swing.text.html.Option;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
@@ -33,7 +30,7 @@ public class FieldMapperTest2 {
         item.setGroups(grouped);
 
         Map<Class<?>, List<Field>> fields = new HashMap<>();
-        instanceFields(item.getClass(), fields);
+        FieldMapperUtils.instanceFields(item.getClass(), fields);
         System.out.println(fields);
 
         Map<Object, Object> mapper = new HashMap<>();
@@ -51,7 +48,7 @@ public class FieldMapperTest2 {
         fieldsMap.map("notes", "notes", (Function<String, List<String>>) s -> Arrays.asList(s.split(",")));
 
         Map<Class<?>, List<Field>> targetFields = new HashMap<>();
-        instanceFields(targetType, targetFields);
+        FieldMapperUtils.instanceFields(targetType, targetFields);
         System.out.println(targetFields);
 
         T targetObj;
@@ -65,15 +62,15 @@ public class FieldMapperTest2 {
         sourceFields.forEach((key, value) -> {
             String keyValue = key.toString();
             Optional<FieldInfo> sourceFieldInfoOptional = fieldsMap.find(keyValue);
-            if(sourceFieldInfoOptional.isPresent()) {
+            if (sourceFieldInfoOptional.isPresent()) {
                 FieldInfo sourceFieldInfo = sourceFieldInfoOptional.get();
-                Field targetField = instanceField(targetType, sourceFieldInfo.target);
+                Field targetField = FieldMapperUtils.instanceField(targetType, sourceFieldInfo.target);
                 if (targetField != null) {
                     if (TriConsumer.class.isAssignableFrom(value.getClass())) {
                         TriConsumer consumer = (TriConsumer) value;
-                        Field sourceField = instanceField(sourceObj.getClass(), sourceFieldInfo.source);
+                        Field sourceField = FieldMapperUtils.instanceField(sourceObj.getClass(), sourceFieldInfo.source);
                         if (sourceField != null) {
-                            Object sourceValue = getFieldValue(sourceField, sourceObj);
+                            Object sourceValue = FieldMapperUtils.getFieldValue(sourceField, sourceObj);
                             if (sourceFieldInfo.resolver != null) {
                                 consumer.accept(targetField, targetObj, sourceFieldInfo.resolver.apply(sourceValue));
                             } else {
@@ -83,8 +80,7 @@ public class FieldMapperTest2 {
                         }
                     }
                 }
-            }
-            else{
+            } else {
                 System.out.printf("Field %s is not mapped%n", keyValue);
             }
         });
@@ -93,18 +89,18 @@ public class FieldMapperTest2 {
 
     private static void fieldsMap(Object source, Map<Object, Object> mapper) {
         Map<Class<?>, List<Field>> fields = new HashMap<>();
-        instanceFields(source.getClass(), fields);
+        FieldMapperUtils.instanceFields(source.getClass(), fields);
         fields.forEach((cls, list) -> {
             list.forEach(field -> {
                 if (field.getType().isPrimitive() || Primitives.isWrapperType(field.getType()) || String.class.isAssignableFrom(field.getType())) {
-                    mapper.put(field.getName(), (TriConsumer) FieldMapperTest2::setFieldValue);
+                    mapper.put(field.getName(), (TriConsumer) FieldMapperUtils::setFieldValue);
                 } else if (List.class.isAssignableFrom(field.getType())) {
-                    List<?> listValue = (List<?>) getFieldValue(field, source);
+                    List<?> listValue = (List<?>) FieldMapperUtils.getFieldValue(field, source);
                     if (listValue != null) {
                         Map<Object, Object> valueFields = new HashMap<>();
                         listValue.forEach(value -> {
                             if (value.getClass().isPrimitive() || Primitives.isWrapperType(value.getClass()) || String.class.isAssignableFrom(value.getClass())) {
-                                valueFields.put(field.getName(), (TriConsumer) FieldMapperTest2::setFieldValue);
+                                valueFields.put(field.getName(), (TriConsumer) FieldMapperUtils::setFieldValue);
                             } else {
                                 fieldsMap(value, valueFields);
                             }
@@ -112,12 +108,12 @@ public class FieldMapperTest2 {
                         mapper.put(field.getName(), valueFields);
                     }
                 } else if (Set.class.isAssignableFrom(field.getType())) {
-                    Set<?> setValue = (Set<?>) getFieldValue(field, source);
+                    Set<?> setValue = (Set<?>) FieldMapperUtils.getFieldValue(field, source);
                     if (setValue != null) {
                         Map<Object, Object> valueFields = new HashMap<>();
                         setValue.forEach(value -> {
                             if (value.getClass().isPrimitive() || Primitives.isWrapperType(value.getClass()) || String.class.isAssignableFrom(value.getClass())) {
-                                valueFields.put(field.getName(), (TriConsumer) FieldMapperTest2::setFieldValue);
+                                valueFields.put(field.getName(), (TriConsumer) FieldMapperUtils::setFieldValue);
                             } else {
                                 fieldsMap(value, valueFields);
                             }
@@ -125,20 +121,20 @@ public class FieldMapperTest2 {
                         mapper.put(field.getName(), valueFields);
                     }
                 } else if (Map.class.isAssignableFrom(field.getType())) {
-                    Map<Object, Object> mapValue = (Map<Object, Object>) getFieldValue(field, source);
+                    Map<Object, Object> mapValue = (Map<Object, Object>) FieldMapperUtils.getFieldValue(field, source);
                     MapEntry mapEntry = new MapEntry();
                     if (mapValue != null) {
                         mapValue.forEach((key, value) -> {
                             Map<Object, Object> keyValueFields = new HashMap<>();
                             if (key.getClass().isPrimitive() || Primitives.isWrapperType(key.getClass()) || String.class.isAssignableFrom(key.getClass())) {
-                                keyValueFields.put(key, (TriConsumer) FieldMapperTest2::setFieldValue);
+                                keyValueFields.put(key, (TriConsumer) FieldMapperUtils::setFieldValue);
                             } else {
                                 fieldsMap(key, keyValueFields);
                             }
                             mapEntry.key = keyValueFields;
                             Map<Object, Object> valValueFields = new HashMap<>();
                             if (value.getClass().isPrimitive() || Primitives.isWrapperType(value.getClass()) || String.class.isAssignableFrom(value.getClass())) {
-                                valValueFields.put(value, (TriConsumer) FieldMapperTest2::setFieldValue);
+                                valValueFields.put(value, (TriConsumer) FieldMapperUtils::setFieldValue);
                             } else {
                                 fieldsMap(value, valValueFields);
                             }
@@ -151,51 +147,6 @@ public class FieldMapperTest2 {
                 }
             });
         });
-    }
-
-    private static void instanceFields(Class<?> type, Map<Class<?>, List<Field>> fields) {
-        fields.put(type, Arrays.stream(type.getDeclaredFields()).filter(field ->
-                !Modifier.isStatic(field.getModifiers())
-        ).collect(Collectors.toList()));
-        if (type.getSuperclass() != Object.class) {
-            instanceFields(type.getSuperclass(), fields);
-        }
-    }
-
-    private static Field instanceField(Class<?> type, String fieldName) {
-        try {
-            return type.getDeclaredField(fieldName);
-        } catch (NoSuchFieldException e) {
-            if (type.getSuperclass() != Object.class) {
-                return instanceField(type.getSuperclass(), fieldName);
-            }
-            return null;
-        }
-    }
-
-    private static void setFieldValue(Field field, Object target, Object value) {
-        boolean isAccessible = field.canAccess(target);
-        field.setAccessible(true);
-        try {
-            field.set(target, value);
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } finally {
-            field.setAccessible(isAccessible);
-        }
-    }
-
-    private static Object getFieldValue(Field field, Object target) {
-        boolean isAccessible = field.canAccess(target);
-        field.setAccessible(true);
-        try {
-            return field.get(target);
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-            return null;
-        } finally {
-            field.setAccessible(isAccessible);
-        }
     }
 
     interface TriConsumer {
