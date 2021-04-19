@@ -1,111 +1,41 @@
 package works.hop.fields.mapper.sample;
 
-import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.Function;
-
-import static java.util.Collections.emptyList;
-import static java.util.Collections.emptyMap;
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import java.util.function.Supplier;
 
 class FieldMapperTest {
 
-    @Test
-    void testTopLevelValues() {
-        FieldMapper itemMapper = new FieldMapper();
-        itemMapper.map("name", "task");
-        itemMapper.map("completed", "done");
+    static final Logger log = LoggerFactory.getLogger(FieldMapperTest.class);
 
-        Item item = new Item("read book", false, "one,two,three", emptyList(), emptyList(), emptyMap());
-        assertThat(item.getName()).isEqualTo("read book");
-        assertThat(item.getCompleted()).isEqualTo(false);
+    public static void main(String[] args) {
+        Map<String, Function<?, ?>> suppliers = new HashMap<>();
+        suppliers.put("name", (context) -> "some name");
+        suppliers.put("completed", (context) -> true);
 
-        ItemTO1 itemTO = itemMapper.map(item, ItemTO1.class);
-        assertThat(itemTO.getTask()).isEqualTo(item.getName());
-        assertThat(itemTO.getDone()).isEqualTo(item.getCompleted());
+        Resolver resolver = new Resolver() {
+            @Override
+            public <T, V> T resolve(Class<T> type, String key, V context) {
+                Function<V, T> provider = (Function<V, T>) suppliers.get(key);
+                return resolver(type, provider, context);
+            }
+        };
+
+        Item item = new Item();
+        item.name = resolver.resolve(String.class, "name", item);
+        item.completed = resolver.resolve(Boolean.class, "completed", item);
+        log.info("item - {}", item);
     }
 
-    @Test
-    void testWithNestedValues() {
-        FieldMapper itemMapper = new FieldMapper();
-        itemMapper.map("name", "item.name");
-        itemMapper.map("completed", "item.completed");
+    interface Resolver {
+        default <T, V> T resolver(Class<T> type, Function<V, T> supplier, V context) {
+            return type.cast(supplier.apply(context));
+        }
 
-        Item item = new Item("read book", false, "one,two,three", emptyList(), emptyList(), emptyMap());
-        assertThat(item.getName()).isEqualTo("read book");
-        assertThat(item.getCompleted()).isEqualTo(false);
-
-        ItemTO2 itemTO = itemMapper.map(item, ItemTO2.class);
-        assertThat(itemTO.getItem().getName()).isEqualTo(item.getName());
-        assertThat(itemTO.getItem().getCompleted()).isEqualTo(item.getCompleted());
-    }
-
-    @Test
-    void testWithMapperFunctionValues() {
-        FieldMapper itemMapper = new FieldMapper();
-        itemMapper.map("name", "task");
-        itemMapper.map("completed", "done");
-        itemMapper.map("notes", "notes", (Function<String, List<String>>) s -> Arrays.asList(s.split(",")));
-
-        Item item = new Item("read book", false, "one,two,three", emptyList(), emptyList(), emptyMap());
-        assertThat(item.getName()).isEqualTo("read book");
-        assertThat(item.getCompleted()).isEqualTo(false);
-        assertThat(item.getNotes()).contains("one", "two", "three");
-
-        ItemTO3 itemTO = itemMapper.map(item, ItemTO3.class);
-        assertThat(itemTO.getTask()).isEqualTo(item.getName());
-        assertThat(itemTO.getDone()).isEqualTo(item.getCompleted());
-        assertThat(itemTO.getNotes().get(0)).isEqualTo("one");
-        assertThat(itemTO.getNotes().get(1)).isEqualTo("two");
-        assertThat(itemTO.getNotes().get(2)).isEqualTo("three");
-    }
-
-    @Test
-    void testWithListOfPrimitives() {
-        FieldMapper itemMapper = new FieldMapper();
-        itemMapper.map("name", "task");
-        itemMapper.map("completed", "done");
-        itemMapper.map("items", "notes");
-
-        Item item = new Item("read book", false, "one,two,three", Arrays.asList("four", "five", "six"), emptyList(), emptyMap());
-        assertThat(item.getName()).isEqualTo("read book");
-        assertThat(item.getCompleted()).isEqualTo(false);
-        assertThat(item.getNotes()).contains("one", "two", "three");
-        assertThat(String.join(",", item.getItems())).contains("four", "five", "six");
-
-        ItemTO3 itemTO = itemMapper.map(item, ItemTO3.class);
-        assertThat(itemTO.getTask()).isEqualTo("read book");
-        assertThat(itemTO.getDone()).isEqualTo(false);
-        assertThat(String.join(",", itemTO.getNotes())).contains("four", "five", "six");
-    }
-
-    @Test
-    void testWithNestedMapperFunctionValues() {
-        FieldMapper itemMapper = new FieldMapper();
-        itemMapper.map("name", "task");
-        itemMapper.map("completed", "done");
-        itemMapper.map("notes", "notes", (Function<String, List<String>>) s -> Arrays.asList(s.split(",")));
-        itemMapper.map("nested", "children");
-
-        Item child1 = new Item("child 1", true, "una", emptyList(), emptyList(), emptyMap());
-        Item child2 = new Item("child 2", false, "ina", emptyList(), emptyList(), emptyMap());
-        Item child3 = new Item("child 3", true, "ana", emptyList(), emptyList(), emptyMap());
-
-        Item item = new Item("do sit-ups", false, "one,two,three", emptyList(), Arrays.asList(child1, child2, child3), emptyMap());
-        assertThat(item.getName()).isEqualTo("do sit-ups");
-        assertThat(item.getCompleted()).isEqualTo(false);
-        assertThat(item.getNotes()).contains("one", "two", "three");
-        assertThat(item.getNested().size()).isEqualTo(3);
-
-        ItemTO4 itemTO = itemMapper.map(item, ItemTO4.class);
-        assertThat(itemTO.getTask()).isEqualTo(item.getName());
-        assertThat(itemTO.getDone()).isEqualTo(item.getCompleted());
-        assertThat(itemTO.getNotes().get(0)).isEqualTo("one");
-        assertThat(itemTO.getNotes().get(1)).isEqualTo("two");
-        assertThat(itemTO.getNotes().get(2)).isEqualTo("three");
-        assertThat(itemTO.getChildren().size()).isEqualTo(3);
-//        assertThat(itemTO.getChildren().get(0).getTask()).isEqualTo("do sit-ups");
+        <T, V> T resolve(Class<T> type, String key, V context);
     }
 }
