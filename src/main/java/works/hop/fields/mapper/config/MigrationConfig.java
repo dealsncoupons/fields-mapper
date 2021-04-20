@@ -11,7 +11,7 @@ import org.springframework.context.annotation.PropertySource;
 @PropertySource("classpath:application-local.properties")
 public class MigrationConfig {
 
-    @Bean
+//    @Bean
     Flyway flyway(DbProperties properties) {
         Flyway flyway = Flyway.configure()
                 .dataSource(properties.url, properties.username, properties.password)
