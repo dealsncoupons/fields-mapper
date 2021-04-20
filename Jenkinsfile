@@ -1,22 +1,38 @@
 pipeline {
     agent any
 
+    tools {
+        gradle "gradle 6.8.3"
+        git "git"
+    }
+
     stages {
-        stage('clean') {
-            step {
-                echo 'cleaning step'
+        stage('init') {
+            steps{
+                script {
+                    env.JAVA_HOME="${tool 'openjdk-11.28'}"
+                    env.PATH="${env.JAVA_HOME}/bin:${env.PATH}"
+                }
             }
         }
 
-        stage('build') {
-            step {
-                echo 'building step'
+        stage('Build') {
+            steps {
+                sh "echo ${env.JAVA_HOME}"
+                sh "gradle clean build"
             }
         }
 
-        stage('deploy') {
-            step {
-                echo 'deploying step'
+        stage('Integration') {
+            steps {
+                junit 'test-results.xml'
+            }
+
+            post {
+                success {
+                    junit '**/target/surefire-reports/TEST-*.xml'
+                    archiveArtifacts 'target/*.jar'
+                }
             }
         }
     }
