@@ -36,7 +36,7 @@ public class MapperConfig {
         return mapperFactory;
     }
 
-    @Bean
+//    @Bean
     public DebeziumEngine<ChangeEvent<String, String>> debeziumEngine(Environment env) {
         final Properties props = new Properties();
         props.setProperty("name", env.getProperty("dbz.name"));
@@ -58,13 +58,13 @@ public class MapperConfig {
                 .notifying(System.out::println).build();
     }
 
-    @PostConstruct
+//    @PostConstruct
     public void init(DebeziumEngine<ChangeEvent<String, String>> engine) {
         ExecutorService executor = Executors.newSingleThreadExecutor();
         executor.execute(engine);
     }
 
-    @PreDestroy
+//    @PreDestroy
     public void destroy(DebeziumEngine<ChangeEvent<String, String>> engine) throws IOException {
         engine.close();
     }
