@@ -24,7 +24,9 @@ pipeline {
         }
 
         stage('Integration') {
-            junit 'test-results.xml'
+            steps {
+                junit 'test-results.xml'
+            }
 
             post {
                 success {
