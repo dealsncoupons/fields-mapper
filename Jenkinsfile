@@ -8,8 +8,10 @@ pipeline {
 
     stages {
         stage('init') {
-            env.JAVA_HOME="${tool 'openjdk-11.28'}"
-            env.PATH="${env.JAVA_HOME}/bin:${env.PATH}"
+            steps{
+                env.JAVA_HOME="${tool 'openjdk-11.28'}"
+                env.PATH="${env.JAVA_HOME}/bin:${env.PATH}"
+            }
         }
 
         stage('Build') {
