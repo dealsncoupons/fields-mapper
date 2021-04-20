@@ -21,6 +21,10 @@ pipeline {
                 sh "echo ${env.JAVA_HOME}"
                 sh "gradle clean build"
             }
+        }
+
+        stage('Integration') {
+            junit 'test-results.xml'
 
             post {
                 success {
