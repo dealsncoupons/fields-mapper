@@ -10,13 +10,13 @@ pipeline {
 
         stage('clean') {
             steps {
-                ./gradlew clean
+                gradle clean
             }
         }
 
         stage('build') {
             steps {
-               ./gradlew build
+               gradle build
             }
         }
 
