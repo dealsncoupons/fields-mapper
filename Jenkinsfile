@@ -4,13 +4,13 @@ pipeline {
     stages {
         stage('clean') {
             steps {
-                echo 'cleaning step'
+                ./gradlew clean
             }
         }
 
         stage('build') {
             steps {
-                echo 'building step'
+               ./gradlew build
             }
         }
 
