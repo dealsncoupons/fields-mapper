@@ -9,13 +9,13 @@ import java.util.function.Function;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class FieldInfo3<A, B> {
+public class ClassInfo<A, B> {
 
-    String source;
-    String target;
-    Function<A, B> resolver;
+    Class<A> source;
+    Class<B> target;
+    String prefix;
 
-    public FieldInfo3(String source, String target) {
-        this(source, target, null);
+    public ClassInfo(Class<A> source, Class<B> target) {
+        this(source, target, "");
     }
 }
