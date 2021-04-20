@@ -2,20 +2,16 @@ package works.hop.fields.mapper.sample;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
-import java.util.Map;
 
+@EqualsAndHashCode(callSuper = true)
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class ItemTO4 {
+public class Level3 extends Level2 {
 
-    String task;
-    Boolean done;
-    List<String> notes;
-    List<String> list;
-    List<ItemTO4> children;
-    Map<String, ItemTO4> groups;
+    List<Level1> levels;
 }

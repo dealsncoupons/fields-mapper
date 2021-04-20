@@ -1,111 +1,199 @@
 package works.hop.fields.mapper.sample;
 
-import org.junit.jupiter.api.Test;
+import com.google.common.primitives.Primitives;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
-import java.util.List;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.util.*;
 import java.util.function.Function;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
-class FieldMapperTest {
+public class FieldMapperTest {
 
-    @Test
-    void testTopLevelValues() {
-        FieldMapper itemMapper = new FieldMapper();
-        itemMapper.map("name", "task");
-        itemMapper.map("completed", "done");
+    static final Logger log = LoggerFactory.getLogger(FieldMapperTest.class);
 
-        Item item = new Item("read book", false, "one,two,three", emptyList(), emptyList(), emptyMap());
-        assertThat(item.getName()).isEqualTo("read book");
-        assertThat(item.getCompleted()).isEqualTo(false);
+    public static void main_other(String[] args) {
+        Map<String, Function<?, ?>> suppliers = new HashMap<>();
+        suppliers.put("name", (context) -> "some name");
+        suppliers.put("completed", (context) -> true);
 
-        ItemTO1 itemTO = itemMapper.map(item, ItemTO1.class);
-        assertThat(itemTO.getTask()).isEqualTo(item.getName());
-        assertThat(itemTO.getDone()).isEqualTo(item.getCompleted());
+        Resolver resolver = new Resolver() {
+            @Override
+            public <T, V> T resolve(Class<T> type, String key, V context) {
+                Function<V, T> provider = (Function<V, T>) suppliers.get(key);
+                return resolver(type, provider, context);
+            }
+        };
+
+        Item item = new Item();
+        item.name = resolver.resolve(String.class, "name", item);
+        item.completed = resolver.resolve(Boolean.class, "completed", item);
+        log.info("item - {}", item);
     }
 
-    @Test
-    void testWithNestedValues() {
-        FieldMapper itemMapper = new FieldMapper();
-        itemMapper.map("name", "item.name");
-        itemMapper.map("completed", "item.completed");
+    public static void main(String[] args) {
+        Item item = new Item();
+        item.setName("name");
+        item.setCompleted(false);
+        item.setNotes("one,two,three");
+        item.setItems(Arrays.asList("four", "five", "six"));
+        Item child1 = new Item("child1", false, "c_one,c_two,c_three", Arrays.asList("C-four", "C-five", "C-six"), emptyList(), emptyMap());
+        Item child2 = new Item("child2", true, "c_eleven,c_twelve,c_thirteen", Arrays.asList("D-four", "D-five", "D-six"), emptyList(), emptyMap());
+        Item child3 = new Item("child3", true, "c_twenty_one,c_twenty_two,c_twenty_three", Arrays.asList("E-four", "E-five", "E-six"), emptyList(), emptyMap());
+        item.setNested(Arrays.asList(child1, child2, child3));
+        Map<String, Item> grouped = new HashMap<>();
+        grouped.put("child1", child1);
+        grouped.put("child2", child2);
+        grouped.put("child3", child3);
+        item.setGroups(grouped);
 
-        Item item = new Item("read book", false, "one,two,three", emptyList(), emptyList(), emptyMap());
-        assertThat(item.getName()).isEqualTo("read book");
-        assertThat(item.getCompleted()).isEqualTo(false);
+//        Item clone = map(item, Item.class, new FieldMapper());
+//        log.info("{}", clone);
 
-        ItemTO2 itemTO = itemMapper.map(item, ItemTO2.class);
-        assertThat(itemTO.getItem().getName()).isEqualTo(item.getName());
-        assertThat(itemTO.getItem().getCompleted()).isEqualTo(item.getCompleted());
+        FieldMapper clone4Mapper = new FieldMapper();
+        clone4Mapper.map(Item.class, ItemTO4.class);
+        clone4Mapper.map("name", "task");
+        clone4Mapper.map("completed", "done");
+        clone4Mapper.map("notes", "notes", (Function<String, List<String>>) s -> Arrays.asList(s.split(",")));
+        clone4Mapper.map("nested", "children");
+        ItemTO4 clone4 = map(item, ItemTO4.class, clone4Mapper);
+        log.info("{}", clone4);
+
+        FieldMapper clone5Mapper = new FieldMapper();
+        clone5Mapper.map("name", "item.name");
+        clone5Mapper.map("completed", "item.completed");
+//        clone5Mapper.map(Item.class, Item.class, "item");
+//        ItemTO5 clone5 = map(item, ItemTO5.class, clone5Mapper);
+//        log.info("{}", clone5);
     }
 
-    @Test
-    void testWithMapperFunctionValues() {
-        FieldMapper itemMapper = new FieldMapper();
-        itemMapper.map("name", "task");
-        itemMapper.map("completed", "done");
-        itemMapper.map("notes", "notes", (Function<String, List<String>>) s -> Arrays.asList(s.split(",")));
-
-        Item item = new Item("read book", false, "one,two,three", emptyList(), emptyList(), emptyMap());
-        assertThat(item.getName()).isEqualTo("read book");
-        assertThat(item.getCompleted()).isEqualTo(false);
-        assertThat(item.getNotes()).contains("one", "two", "three");
-
-        ItemTO3 itemTO = itemMapper.map(item, ItemTO3.class);
-        assertThat(itemTO.getTask()).isEqualTo(item.getName());
-        assertThat(itemTO.getDone()).isEqualTo(item.getCompleted());
-        assertThat(itemTO.getNotes().get(0)).isEqualTo("one");
-        assertThat(itemTO.getNotes().get(1)).isEqualTo("two");
-        assertThat(itemTO.getNotes().get(2)).isEqualTo("three");
+    private static <T> T map(Object source, Class<T> target, FieldMapper fieldMapper) {
+        T targetObj = FieldMapperUtils.newInstance(target);
+        Map<Class<?>, List<Field>> fields = new HashMap<>();
+        FieldMapperUtils.instanceFields(source.getClass(), fields);
+        fields.forEach((clazz, fieldList) -> {
+            fieldList.forEach(field -> {
+                int fieldModifiers = field.getModifiers();
+                Class<?> fieldType = field.getType();
+                if (!Modifier.isStatic(fieldModifiers)) {
+                    if ((fieldType.isPrimitive() || Primitives.isWrapperType(fieldType) || String.class.isAssignableFrom(fieldType))) {
+                        mapBasicValue(field, source, targetObj, fieldMapper);
+                    } else if (List.class.isAssignableFrom(fieldType)) {
+                        mapListValue(field, source, targetObj, fieldMapper);
+                    } else if (Set.class.isAssignableFrom(fieldType)) {
+                        mapSetValue(field, source, targetObj, fieldMapper);
+                    } else if (Map.class.isAssignableFrom(fieldType)) {
+                        mapMapValue(field, source, targetObj, fieldMapper);
+                    } else {
+                        log.warn("field {} not mapped", field.getName());
+                    }
+                } else {
+                    log.warn("ignoring static field - {}", field.getName());
+                }
+            });
+        });
+        return targetObj;
     }
 
-    @Test
-    void testWithListOfPrimitives() {
-        FieldMapper itemMapper = new FieldMapper();
-        itemMapper.map("name", "task");
-        itemMapper.map("completed", "done");
-        itemMapper.map("items", "notes");
-
-        Item item = new Item("read book", false, "one,two,three", Arrays.asList("four", "five", "six"), emptyList(), emptyMap());
-        assertThat(item.getName()).isEqualTo("read book");
-        assertThat(item.getCompleted()).isEqualTo(false);
-        assertThat(item.getNotes()).contains("one", "two", "three");
-        assertThat(String.join(",", item.getItems())).contains("four", "five", "six");
-
-        ItemTO3 itemTO = itemMapper.map(item, ItemTO3.class);
-        assertThat(itemTO.getTask()).isEqualTo("read book");
-        assertThat(itemTO.getDone()).isEqualTo(false);
-        assertThat(String.join(",", itemTO.getNotes())).contains("four", "five", "six");
+    private static void mapBasicValue(Field field, Object source, Object target, FieldMapper fieldMapper) {
+        String sourceProperty = field.getName();
+        String targetProperty = fieldMapper.targetProperty(sourceProperty).orElse(sourceProperty);
+        Field targetField = FieldMapperUtils.instanceField(target.getClass(), targetProperty);
+        if (targetField != null) {
+            Object sourceValue = FieldMapperUtils.getFieldValue(field, source);
+            Object resolvedValue = Optional.ofNullable(fieldMapper.resolver(sourceProperty))
+                    .map(resolver -> resolver.apply(sourceValue)).orElse(sourceValue);
+            FieldMapperUtils.setFieldValue(targetField, target, resolvedValue);
+        } else {
+            log.warn("target field {} was not found", targetProperty);
+        }
     }
 
-    @Test
-    void testWithNestedMapperFunctionValues() {
-        FieldMapper itemMapper = new FieldMapper();
-        itemMapper.map("name", "task");
-        itemMapper.map("completed", "done");
-        itemMapper.map("notes", "notes", (Function<String, List<String>>) s -> Arrays.asList(s.split(",")));
-        itemMapper.map("nested", "children");
+    private static void mapListValue(Field field, Object source, Object target, FieldMapper fieldMapper) {
+        String sourceProperty = field.getName();
+        String targetProperty = fieldMapper.targetProperty(sourceProperty).orElse(sourceProperty);
+        Field targetField = FieldMapperUtils.instanceField(target.getClass(), targetProperty);
+        if (targetField != null) {
+            List<Object> targetList = new ArrayList<>();
+            List<?> sourceList = (List) FieldMapperUtils.getFieldValue(field, source);
+            if (sourceList != null) {
+                sourceList.forEach(listItem -> {
+                    Class<?> sourceListItemType = listItem.getClass();
+                    if (sourceListItemType.isPrimitive() || Primitives.isWrapperType(sourceListItemType) || String.class.isAssignableFrom(sourceListItemType)) {
+                        targetList.add(listItem);
+                    } else {
+                        Class<?> targetListItemType = fieldMapper.targetClass(listItem.getClass()).orElse(listItem.getClass());
+                        Object targetListItemValue = map(listItem, fieldMapper.targetClass(targetListItemType).orElse(targetListItemType), fieldMapper);
+                        targetList.add(targetListItemValue);
+                    }
+                });
+            }
+            FieldMapperUtils.setFieldValue(targetField, target, targetList);
+        } else {
+            log.warn("target field {} was not found", targetProperty);
+        }
+    }
 
-        Item child1 = new Item("child 1", true, "una", emptyList(), emptyList(), emptyMap());
-        Item child2 = new Item("child 2", false, "ina", emptyList(), emptyList(), emptyMap());
-        Item child3 = new Item("child 3", true, "ana", emptyList(), emptyList(), emptyMap());
+    private static void mapSetValue(Field field, Object source, Object target, FieldMapper fieldMapper) {
+        String sourceProperty = field.getName();
+        String targetProperty = fieldMapper.targetProperty(sourceProperty).orElse(sourceProperty);
+        Field targetField = FieldMapperUtils.instanceField(target.getClass(), targetProperty);
+        if (targetField != null) {
+            Set<Object> targetSet = new HashSet<>();
+            Set<?> sourceSet = (Set) FieldMapperUtils.getFieldValue(field, source);
+            if (sourceSet != null) {
+                sourceSet.forEach(setItem -> {
+                    Class<?> sourceSetItemType = setItem.getClass();
+                    if (sourceSetItemType.isPrimitive() || Primitives.isWrapperType(sourceSetItemType) || String.class.isAssignableFrom(sourceSetItemType)) {
+                        targetSet.add(setItem);
+                    } else {
+                        Class<?> targetSetItemType = fieldMapper.targetClass(setItem.getClass()).orElse(setItem.getClass());
+                        Object targetSetItemValue = map(setItem, fieldMapper.targetClass(targetSetItemType).orElse(targetSetItemType), fieldMapper);
+                        targetSet.add(targetSetItemValue);
+                    }
+                });
+            }
+            FieldMapperUtils.setFieldValue(targetField, target, targetSet);
+        } else {
+            log.warn("target field {} was not found", targetProperty);
+        }
+    }
 
-        Item item = new Item("do sit-ups", false, "one,two,three", emptyList(), Arrays.asList(child1, child2, child3), emptyMap());
-        assertThat(item.getName()).isEqualTo("do sit-ups");
-        assertThat(item.getCompleted()).isEqualTo(false);
-        assertThat(item.getNotes()).contains("one", "two", "three");
-        assertThat(item.getNested().size()).isEqualTo(3);
+    private static void mapMapValue(Field field, Object source, Object target, FieldMapper fieldMapper) {
+        String sourceProperty = field.getName();
+        String targetProperty = fieldMapper.targetProperty(sourceProperty).orElse(sourceProperty);
+        Field targetField = FieldMapperUtils.instanceField(target.getClass(), targetProperty);
+        if (targetField != null) {
+            Map<Object, Object> targetMap = new HashMap<>();
+            Map<?, ?> sourceMap = (Map) FieldMapperUtils.getFieldValue(field, source);
+            if (sourceMap != null) {
+                sourceMap.forEach((mapKey, mapValue) -> {
+                    Class<?> mapKeyType = mapKey.getClass();
+                    Object targetMapKey = (mapKeyType.isPrimitive() || Primitives.isWrapperType(mapKeyType) || String.class.isAssignableFrom(mapKeyType)) ?
+                            mapKey : map(mapKey, fieldMapper.targetClass(mapKeyType).orElse(mapKeyType), fieldMapper);
 
-        ItemTO4 itemTO = itemMapper.map(item, ItemTO4.class);
-        assertThat(itemTO.getTask()).isEqualTo(item.getName());
-        assertThat(itemTO.getDone()).isEqualTo(item.getCompleted());
-        assertThat(itemTO.getNotes().get(0)).isEqualTo("one");
-        assertThat(itemTO.getNotes().get(1)).isEqualTo("two");
-        assertThat(itemTO.getNotes().get(2)).isEqualTo("three");
-        assertThat(itemTO.getChildren().size()).isEqualTo(3);
-//        assertThat(itemTO.getChildren().get(0).getTask()).isEqualTo("do sit-ups");
+                    Class<?> mapValueType = mapValue.getClass();
+                    Object targetMapValue = (mapValueType.isPrimitive() || Primitives.isWrapperType(mapValueType) || String.class.isAssignableFrom(mapValueType)) ?
+                            mapKey : map(mapValue, fieldMapper.targetClass(mapValueType).orElse(mapValueType), fieldMapper);
+
+                    targetMap.put(targetMapKey, targetMapValue);
+                });
+            }
+            FieldMapperUtils.setFieldValue(targetField, target, targetMap);
+        } else {
+            log.warn("target field {} was not found", targetProperty);
+        }
+    }
+
+    interface Resolver {
+        default <T, V> T resolver(Class<T> type, Function<V, T> supplier, V context) {
+            return type.cast(supplier.apply(context));
+        }
+
+        <T, V> T resolve(Class<T> type, String key, V context);
     }
 }
