@@ -12,12 +12,12 @@ import org.springframework.context.annotation.PropertySource;
 public class MigrationConfig {
 
 //    @Bean
-    Flyway flyway(DbProperties properties) {
-        Flyway flyway = Flyway.configure()
-                .dataSource(properties.url, properties.username, properties.password)
-                .baselineOnMigrate(true)
-                .load();
-        flyway.migrate();
-        return flyway;
-    }
+//    Flyway flyway(DbProperties properties) {
+//        Flyway flyway = Flyway.configure()
+//                .dataSource(properties.url, properties.username, properties.password)
+//                .baselineOnMigrate(true)
+//                .load();
+//        flyway.migrate();
+//        return flyway;
+//    }
 }
