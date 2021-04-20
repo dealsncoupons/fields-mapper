@@ -2,15 +2,19 @@ pipeline {
     agent any
 
     tools {
-        java "openjdk-11.28"
         gradle "gradle 6.8.3"
         git "git"
     }
 
     stages {
+        stage('init') {
+            env.JAVA_HOME="${tool 'openjdk-11.28'}"
+            env.PATH="${env.JAVA_HOME}/bin:${env.PATH}"
+        }
+
         stage('Build') {
             steps {
-                // Run Maven on a Unix agent.
+                sh 'echo ${env.JAVA_HOME}'
                 sh "gradle clean build"
             }
 
