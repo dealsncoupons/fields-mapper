@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     tools {
-        // Install the Maven version configured as "M3" and add it to the path.
+        java "openjdk-11.28"
         gradle "gradle 6.8.3"
         git "git"
     }
