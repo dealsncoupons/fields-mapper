@@ -18,13 +18,13 @@ pipeline {
 
         stage('Build') {
             steps {
-                sh 'echo ${env.JAVA_HOME}'
+                sh "echo ${env.JAVA_HOME}"
                 sh "gradle clean build"
             }
 
             post {
                 success {
-                    junit '**/target/surefire-reports/TEST-*.xml'
+//                     junit '**/target/surefire-reports/TEST-*.xml'
                     archiveArtifacts 'target/*.jar'
                 }
             }
