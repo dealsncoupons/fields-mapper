@@ -1,22 +1,23 @@
 pipeline {
     agent any
 
+    tools {
+        // Install the Maven version configured as "M3" and add it to the path.
+        maven "gradle 6.8.3"
+    }
+
     stages {
-        stage('clean') {
+        stage('Build') {
             steps {
-                echo 'cleaning step'
+                // Run Maven on a Unix agent.
+                sh "gradle clean build"
             }
-        }
 
-        stage('build') {
-            steps {
-                echo 'building step'
-            }
-        }
-
-        stage('deploy') {
-            steps {
-                echo 'deploying step'
+            post {
+                success {
+                    junit '**/target/surefire-reports/TEST-*.xml'
+                    archiveArtifacts 'target/*.jar'
+                }
             }
         }
     }
