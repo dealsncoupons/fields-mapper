@@ -2,21 +2,15 @@ pipeline {
     agent any
 
     stages {
-        stage('init'){
-            steps {
-                gradle init
-            }
-        }
-
         stage('clean') {
             steps {
-                gradle clean
+                echo 'cleaning step'
             }
         }
 
         stage('build') {
             steps {
-               gradle build
+                echo 'building step'
             }
         }
 
