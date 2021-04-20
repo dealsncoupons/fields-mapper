@@ -3,19 +3,19 @@ pipeline {
 
     stages {
         stage('clean') {
-            step {
+            steps {
                 echo 'cleaning step'
             }
         }
 
         stage('build') {
-            step {
+            steps {
                 echo 'building step'
             }
         }
 
         stage('deploy') {
-            step {
+            steps {
                 echo 'deploying step'
             }
         }
