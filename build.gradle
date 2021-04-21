@@ -35,6 +35,9 @@ dependencies {
     //debezium
     implementation group: 'io.debezium', name: 'debezium-connector-postgres', version: '1.5.0.Final'
 
+    //jdbc/postgres
+    implementation group: 'org.jdbi', name: 'jdbi3-postgres', version: '3.19.0'
+
     compileOnly 'org.projectlombok:lombok'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     runtimeOnly 'org.postgresql:postgresql'

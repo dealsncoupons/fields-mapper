@@ -51,6 +51,9 @@ public class FieldMapperTest {
         grouped.put("child3", child3);
         item.setGroups(grouped);
 
+        Map<String, Function<Object, Object>> suppliers = FieldMapperUtils.valueSuppliers(item, item.getClass(), item.getClass().getName());
+        log.info("checking out value suppliers %n{}", suppliers);
+
 //        Item clone = map(item, Item.class, new FieldMapper());
 //        log.info("{}", clone);
 
@@ -60,13 +63,13 @@ public class FieldMapperTest {
         clone4Mapper.map("completed", "done");
         clone4Mapper.map("notes", "notes", (Function<String, List<String>>) s -> Arrays.asList(s.split(",")));
         clone4Mapper.map("nested", "children");
-        ItemTO4 clone4 = map(item, ItemTO4.class, clone4Mapper);
-        log.info("{}", clone4);
+//        ItemTO4 clone4 = map(item, ItemTO4.class, clone4Mapper);
+//        log.info("{}", clone4);
 
         FieldMapper clone5Mapper = new FieldMapper();
         clone5Mapper.map("name", "item.name");
         clone5Mapper.map("completed", "item.completed");
-//        clone5Mapper.map(Item.class, Item.class, "item");
+        clone5Mapper.map(Item.class, Item.class, "item");
 //        ItemTO5 clone5 = map(item, ItemTO5.class, clone5Mapper);
 //        log.info("{}", clone5);
     }

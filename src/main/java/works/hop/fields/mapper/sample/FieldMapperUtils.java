@@ -1,14 +1,67 @@
 package works.hop.fields.mapper.sample;
 
+import com.google.common.primitives.Primitives;
+import ma.glasnost.orika.MapEntry;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class FieldMapperUtils {
+
+    public static Map<String, Function<Object, Object>> valueSuppliers(Object source, Class<?> type, String prefix) {
+        Map<String, Function<Object, Object>> fields = Arrays.stream(type.getDeclaredFields()).filter(field ->
+                !Modifier.isStatic(field.getModifiers())
+        ).map(field -> {
+            Class<?> fieldType = field.getType();
+            Object fieldValue = FieldMapperUtils.getFieldValue(field, source);
+            int modifiers = fieldType.getModifiers();
+            if (fieldValue != null) {
+                if (!Modifier.isStatic(modifiers) && (fieldType.isPrimitive() || Primitives.isWrapperType(fieldType) || String.class.isAssignableFrom(fieldType))) {
+                    return new MapEntry<>(String.format("%s.%s", prefix, field.getName()), (Function<Object, Object>) o -> fieldValue);
+                } else if (List.class.isAssignableFrom(fieldType)) {
+                    List<?> sourceList = (List) fieldValue;
+                    AtomicInteger index = new AtomicInteger(0);
+                    Map<String, Function<Object, Object>> listEntries = new HashMap<>();
+                    sourceList.forEach(listItem -> {
+                        Map<String, Function<Object, Object>> listItemEntries = valueSuppliers(
+                                listItem, listItem.getClass(), String.format("%s(%d)", prefix, index.getAndIncrement())) ;
+                        listEntries.putAll(listItemEntries);
+
+                    });
+                    return new MapEntry<>(String.format("%s.%s", prefix, field.getName()), (Function<Object, Object>) o -> listEntries);
+                } else if (Map.class.isAssignableFrom(fieldType)) {
+                    Map<?, ?> sourceMap = (Map) fieldValue;
+                    Map<String, Function<Object, Object>> entrySetValues = new HashMap<>();
+                    sourceMap.entrySet().forEach(entryItem -> {
+                        Object entryKey = entryItem.getKey();
+                        Map<String, Function<Object, Object>> entryKeyItems = valueSuppliers(
+                                entryKey, entryKey.getClass(), String.format("%s.%s[%s:]", prefix, field.getName(), entryKey)) ;
+                        entrySetValues.putAll(entryKeyItems);
+
+                        Object entryValue = entryItem.getValue();
+                        Map<String, Function<Object, Object>> entryValueItems = valueSuppliers(
+                                entryValue, entryValue.getClass(), String.format("%s.%s[:%s]", prefix, field.getName(), entryKey)) ;
+                        entrySetValues.putAll(entryValueItems);
+
+                    });
+                    return new MapEntry<>(String.format("%s.%s", prefix, field.getName()), (Function<Object, Object>) o -> entrySetValues);
+                } else {
+                    return null;
+                }
+            } else {
+                return null;
+            }
+        }).filter(Objects::nonNull).collect(Collectors.toMap(MapEntry::getKey, MapEntry::getValue));
+        if (type.getSuperclass() != Object.class) {
+            fields.putAll(valueSuppliers(source, type.getSuperclass(), prefix));
+        }
+        return fields;
+    }
 
     public static void instanceFields(Class<?> type, Map<Class<?>, List<Field>> fields) {
         fields.put(type, Arrays.stream(type.getDeclaredFields()).filter(field ->
@@ -71,7 +124,7 @@ public class FieldMapperUtils {
         }
     }
 
-    public static <T>T newInstance(Class<T> type){
+    public static <T> T newInstance(Class<T> type) {
         try {
             return type.getConstructor().newInstance();
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
